@@ -1,4 +1,4 @@
-name: Build Tauri App
+name: Build Tauri App with pnpm
 
 on:
   push:
@@ -14,29 +14,37 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'pnpm'
 
-      - name: Install Rust
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      - name: Install dependencies
-        run: |
-          npm install
-          npm run build
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build frontend
+        run: pnpm build
 
       - name: Build Tauri app
-        run: npm run tauri build
+        run: pnpm tauri build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: tauri-app-${{ matrix.platform }}
+          name: tauri-${{ matrix.platform }}
           path: src-tauri/target/release/bundle
