@@ -14,40 +14,39 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - name: Checkout repo
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'pnpm'
 
-      - name: Setup pnpm
+      - name: 🟣 Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-          run_install: false
 
-      - name: Verify pnpm installation
+      - name: ✅ Verify pnpm installation
         run: pnpm --version
 
-      - name: Install Rust toolchain
+      - name: 🦀 Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      - name: Install frontend dependencies
+      - name: 📦 Install frontend dependencies
         run: pnpm install
 
-      - name: Build frontend
+      - name: 🛠️ Build frontend (Vite)
         run: pnpm build
 
-      - name: Build Tauri app
+      - name: 🧱 Build Tauri desktop app
         run: pnpm tauri build
 
-      - name: Upload artifact
+      - name: 📤 Upload compiled artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tauri-${{ matrix.platform }}
