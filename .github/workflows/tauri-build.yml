@@ -14,28 +14,28 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-
-
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+      - name: 🟣 Install pnpm manually
+        run: npm install -g pnpm
 
-      - name: Verify pnpm installation
+      - name: ✅ Verify pnpm installation
         run: pnpm --version
 
-      - name: Install frontend dependencies
-        run: pnpm install
+      - name: 🦀 Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
 
+      - name: 📦 Install dependencies
+        run: pnpm install
 
       - name: 🛠️ Build frontend
         run: pnpm build
