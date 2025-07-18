@@ -1,4 +1,4 @@
-export type UserRole = "administrateur" | "greffier" | "superviseur" | "police"
+export type UserRole = "administrateur" | "greffier" | "superviseur" | "police" | "commandant" | "juge"
 
 export interface User {
   id: string
@@ -27,14 +27,37 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: "opj", actions: ["read", "create", "update", "delete"] },
     { resource: "juges", actions: ["read", "create", "update", "delete"] },
     { resource: "prisonniers", actions: ["read", "create", "update", "delete"] },
+    { resource: "centres", actions: ["read", "create", "update", "delete"] },
+    { resource: "decisions", actions: ["read", "create", "update", "delete"] },
     { resource: "parametres", actions: ["read", "update"] },
     { resource: "audit", actions: ["read"] },
     { resource: "statistiques", actions: ["read"] },
+  ],
+  commandant: [
+    { resource: "dashboard", actions: ["read"] },
+    { resource: "pv", actions: ["read", "create", "update"] },
+    { resource: "decisions", actions: ["read", "create", "update"] },
+    { resource: "prisonniers", actions: ["read", "create", "update"] },
+    { resource: "dossiers", actions: ["read"] },
+    { resource: "opj", actions: ["read"] },
+    { resource: "parametres", actions: ["read"] },
+  ],
+  juge: [
+    { resource: "dashboard", actions: ["read"] },
+    { resource: "recherche", actions: ["read"] },
+    { resource: "dossiers", actions: ["read", "update"] },
+    { resource: "pv", actions: ["read"] },
+    { resource: "decisions", actions: ["read", "create", "update"] },
+    { resource: "prisonniers", actions: ["read", "update"] },
+    { resource: "centres", actions: ["read", "update"] },
+    { resource: "jugements", actions: ["read", "create", "update"] },
+    { resource: "parametres", actions: ["read"] },
   ],
   greffier: [
     { resource: "dashboard", actions: ["read"] },
     { resource: "juges", actions: ["read"] },
     { resource: "prisonniers", actions: ["read", "create", "update", "delete"] },
+    { resource: "centres", actions: ["read"] },
     { resource: "parametres", actions: ["read"] },
   ],
   superviseur: [
@@ -45,6 +68,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: "opj", actions: ["read"] },
     { resource: "juges", actions: ["read"] },
     { resource: "prisonniers", actions: ["read"] },
+    { resource: "centres", actions: ["read"] },
     { resource: "audit", actions: ["read"] },
     { resource: "statistiques", actions: ["read"] },
   ],
@@ -99,6 +123,28 @@ export const DEMO_USERS: User[] = [
     unite: "Unité Centrale",
     permissions: ROLE_PERMISSIONS.police,
   },
+  {
+    id: "5",
+    username: "commandant1",
+    password: "cmd123",
+    role: "commandant",
+    nom: "Rousseau",
+    prenom: "Paul",
+    email: "commandant@police.fr",
+    unite: "Brigade Centrale",
+    permissions: ROLE_PERMISSIONS.commandant,
+  },
+  {
+    id: "6",
+    username: "juge1",
+    password: "juge123",
+    role: "juge",
+    nom: "Moreau",
+    prenom: "Catherine",
+    email: "juge@justice.fr",
+    unite: "TGI Paris",
+    permissions: ROLE_PERMISSIONS.juge,
+  },
 ]
 
 // Fonctions utilitaires
@@ -141,11 +187,15 @@ export function getDefaultRoute(role: UserRole): string {
     case "administrateur":
       return "/dashboard"
     case "greffier":
-      return "/detenus" // Redirection vers la gestion des détenus
+      return "/detenus"
     case "superviseur":
       return "/dashboard"
     case "police":
       return "/pv"
+    case "commandant":
+      return "/decisions"
+    case "juge":
+      return "/jugements"
     default:
       return "/dashboard"
   }
@@ -156,8 +206,9 @@ export function getRoleDisplayName(role: UserRole): string {
     administrateur: "Administrateur",
     greffier: "Greffier",
     superviseur: "Superviseur",
-    police: "OPJ",
-    // police: "Officier de Police Judiciaire",
+    police: "Officier de Police Judiciaire",
+    commandant: "Commandant de Brigade",
+    juge: "Juge",
   }
   return names[role]
 }
@@ -168,6 +219,8 @@ export function getRoleBadgeColor(role: UserRole): string {
     greffier: "bg-green-600 text-white",
     superviseur: "bg-blue-600 text-white",
     police: "bg-orange-600 text-white",
+    commandant: "bg-red-600 text-white",
+    juge: "bg-indigo-600 text-white",
   }
   return colors[role]
 }

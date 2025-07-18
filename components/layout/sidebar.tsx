@@ -2,161 +2,245 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  LayoutDashboard,
-  FolderOpen,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Home,
+  Search,
   FileText,
   Users,
-  Gavel,
   Settings,
-  Menu,
-  X,
-  Scale,
   LogOut,
-  Search,
-  BarChart3,
+  User,
   Shield,
+  Activity,
+  ChevronDown,
+  Gavel,
   Building,
+  Scale,
+  Clock,
+  UserCheck,
+  AlertTriangle,
 } from "lucide-react"
-import { getCurrentUser, logout, hasPermission, getRoleDisplayName, getRoleBadgeColor, type User } from "@/lib/auth"
+import { getCurrentUser, logout, getRoleDisplayName, getRoleBadgeColor, hasPermission } from "@/lib/auth"
 
-interface NavigationItem {
-  name: string
-  href: string
-  icon: any
-  badge?: string
-  resource: string
-  action: string
-}
-
-const allNavigationItems: NavigationItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, resource: "dashboard", action: "read" },
-  { name: "Recherche", href: "/recherche", icon: Search, resource: "recherche", action: "read" },
-  { name: "Dossiers", href: "/dossiers", icon: FolderOpen, badge: "12", resource: "dossiers", action: "read" },
-  { name: "Procès-Verbaux", href: "/pv", icon: FileText, badge: "5", resource: "pv", action: "read" },
-  { name: "OPJ", href: "/opj", icon: Users, resource: "opj", action: "read" },
-  { name: "Juges", href: "/juges", icon: Gavel, resource: "juges", action: "read" },
-  { name: "Détenus", href: "/detenus", icon: Building, resource: "prisonniers", action: "read" },
-  { name: "Audit", href: "/audit", icon: BarChart3, resource: "audit", action: "read" },
-  { name: "Paramètres", href: "/parametres", icon: Settings, resource: "parametres", action: "read" },
+const navigationItems = [
+  {
+    name: "Tableau de bord",
+    href: "/dashboard",
+    icon: Home,
+    permission: { resource: "dashboard", action: "read" },
+  },
+  {
+    name: "Recherche",
+    href: "/recherche",
+    icon: Search,
+    permission: { resource: "recherche", action: "read" },
+  },
+  {
+    name: "Dossiers",
+    href: "/dossiers",
+    icon: FileText,
+    permission: { resource: "dossiers", action: "read" },
+  },
+  {
+    name: "Procès-verbaux",
+    href: "/pv",
+    icon: FileText,
+    permission: { resource: "pv", action: "read" },
+  },
+  {
+    name: "Décisions OPJ",
+    href: "/decisions",
+    icon: Gavel,
+    permission: { resource: "decisions", action: "read" },
+    roles: ["commandant"],
+  },
+  {
+    name: "Jugements",
+    href: "/jugements",
+    icon: Scale,
+    permission: { resource: "jugements", action: "read" },
+    roles: ["juge"],
+  },
+  {
+    name: "OPJ",
+    href: "/opj",
+    icon: Shield,
+    permission: { resource: "opj", action: "read" },
+  },
+  {
+    name: "Juges",
+    href: "/juges",
+    icon: UserCheck,
+    permission: { resource: "juges", action: "read" },
+  },
+  {
+    name: "Détenus",
+    href: "/detenus",
+    icon: Users,
+    permission: { resource: "prisonniers", action: "read" },
+  },
+  {
+    name: "Centres pénitentiaires",
+    href: "/centres",
+    icon: Building,
+    permission: { resource: "centres", action: "read" },
+  },
+  {
+    name: "Audit",
+    href: "/audit",
+    icon: Activity,
+    permission: { resource: "audit", action: "read" },
+  },
+  {
+    name: "Paramètres",
+    href: "/parametres",
+    icon: Settings,
+    permission: { resource: "parametres", action: "read" },
+  },
 ]
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [navigation, setNavigation] = useState<NavigationItem[]>([])
   const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     const currentUser = getCurrentUser()
     setUser(currentUser)
-
-    if (currentUser) {
-      // Filtrer la navigation selon les permissions
-      const allowedNavigation = allNavigationItems.filter((item) => hasPermission(item.resource, item.action))
-      setNavigation(allowedNavigation)
-    }
   }, [])
 
   const handleLogout = () => {
     logout()
-    window.location.href = "/"
+    router.push("/")
   }
 
   if (!user) return null
 
+  const filteredNavigation = navigationItems.filter((item) => {
+    // Vérifier les permissions
+    if (!hasPermission(item.permission.resource, item.permission.action)) {
+      return false
+    }
+
+    // Vérifier les rôles spécifiques si définis
+    if (item.roles && !item.roles.includes(user.role)) {
+      return false
+    }
+
+    return true
+  })
+
   return (
-    <>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden bg-slate-800 text-white hover:bg-slate-700"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-slate-800 border-r border-slate-700 transform transition-transform duration-200 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center gap-3 p-6 border-b border-slate-700">
+    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-800 border-r border-slate-700">
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-center h-16 px-4 bg-slate-900 border-b border-slate-700">
+          <div className="flex items-center space-x-2">
             <Scale className="h-8 w-8 text-blue-400" />
-            <div>
-              <h1 className="text-lg font-semibold text-white">SGJ</h1>
-              <p className="text-xs text-slate-400">Système de Gestion Judiciaire</p>
-            </div>
+            <span className="text-xl font-bold text-white">JusticeApp</span>
           </div>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    isActive ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700 hover:text-white",
-                  )}
-                  onClick={() => setIsOpen(false)}
+        {/* User Info */}
+        <div className="p-4 bg-slate-900/50 border-b border-slate-700">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start text-left p-2 h-auto hover:bg-slate-700">
+                <div className="flex items-center space-x-3 w-full">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {user.prenom} {user.nom}
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={`text-xs ${getRoleBadgeColor(user.role)}`}>
+                        {getRoleDisplayName(user.role)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-slate-800 border-slate-700" align="start">
+              <DropdownMenuLabel className="text-slate-300">Mon compte</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-slate-700" />
+              <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Paramètres</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-700" />
+              <DropdownMenuItem className="text-red-400 hover:bg-slate-700 focus:bg-slate-700" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Déconnexion</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
+          {filteredNavigation.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
+
+            return (
+              <Link key={item.name} href={item.href}>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={`w-full justify-start text-left ${
+                    isActive
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className="flex-1">{item.name}</span>
-                  {item.badge && (
-                    <Badge variant="secondary" className="bg-red-600 text-white text-xs">
-                      {item.badge}
+                  <Icon className="mr-3 h-4 w-4" />
+                  {item.name}
+                  {item.name === "Décisions OPJ" && user.role === "commandant" && (
+                    <Badge className="ml-auto bg-yellow-600 text-white text-xs">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Nouveau
                     </Badge>
                   )}
-                </Link>
-              )
-            })}
-          </nav>
+                  {item.name === "Jugements" && user.role === "juge" && (
+                    <Badge className="ml-auto bg-orange-600 text-white text-xs">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Urgent
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )
+          })}
+        </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-slate-700">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {user.prenom} {user.nom}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Badge className={`${getRoleBadgeColor(user.role)} text-xs`}>{getRoleDisplayName(user.role)}</Badge>
-                </div>
-                {user.unite && <p className="text-xs text-slate-400 truncate">{user.unite}</p>}
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
-            </Button>
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-700">
+          <div className="text-xs text-slate-500 text-center">
+            <p>Système Judiciaire v2.0</p>
+            <p>© 2024 - Tous droits réservés</p>
           </div>
         </div>
       </div>
-
-      {/* Overlay for mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 z-30 bg-black bg-opacity-50 md:hidden" onClick={() => setIsOpen(false)} />
-      )}
-    </>
+    </div>
   )
 }

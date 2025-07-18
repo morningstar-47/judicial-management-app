@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "my-v0-project",
+  "productName": "judicial-management",
   "version": "0.1.0",
   "identifier": "com.mopeno.judicialmanagement",
   "build": {
